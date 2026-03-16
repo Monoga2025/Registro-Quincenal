@@ -90,7 +90,7 @@ export function MainLayout({ children, title, backTo }: { children: ReactNode, t
                 </Link>
               )}
               {user?.role === 'employee' && (
-                <Link href="/" className="px-4 py-3 rounded-xl font-medium text-secondary hover:bg-black/5" onClick={() => setMenuOpen(false)}>
+                <Link href="/home" className="px-4 py-3 rounded-xl font-medium text-secondary hover:bg-black/5" onClick={() => setMenuOpen(false)}>
                   Inicio
                 </Link>
               )}

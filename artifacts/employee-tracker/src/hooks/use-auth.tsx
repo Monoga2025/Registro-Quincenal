@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleUnauthorized = () => {
       setToken(null);
-      setLocation('/select');
+      setLocation('/');
     };
     window.addEventListener('auth_unauthorized', handleUnauthorized);
     return () => window.removeEventListener('auth_unauthorized', handleUnauthorized);
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.user.role === 'admin') {
         setLocation('/admin');
       } else {
-        setLocation('/');
+        setLocation('/home');
       }
     } catch (error: any) {
       toast({
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       description: "Bienvenido",
     });
 
-    setLocation('/');
+    setLocation('/home');
   };
 
   const handleLogout = async () => {
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       localStorage.removeItem('auth_token');
       setToken(null);
-      setLocation('/select');
+      setLocation('/');
     }
   };
 

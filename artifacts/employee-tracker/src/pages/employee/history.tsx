@@ -47,7 +47,7 @@ export default function EmployeeHistory() {
   const totalMinutes = report ? Math.round((report.totalHours ?? 0) * 60) : 0;
 
   return (
-    <MainLayout title="Historial Quincenal" backTo="/">
+    <MainLayout title="Historial Quincenal" backTo="/home">
       <div className="max-w-4xl mx-auto space-y-6">
 
         {/* Period Selector */}
