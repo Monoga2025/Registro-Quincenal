@@ -1,0 +1,17 @@
+packages:
+  "framer-motion": "For the smooth 3-second hold circular progress animation"
+  "date-fns": "For elegant date and time formatting"
+  "react-hook-form": "For form state management"
+  "@hookform/resolvers": "For Zod form validation"
+
+images:
+  - path: "artifacts/employee-tracker/public/images/auth-bg.png"
+    description: "Abstract modern geometric background with subtle deep black and vibrant yellow accents, premium financial tech aesthetic, clean and minimal"
+    aspect_ratio: "16:9"
+  - path: "artifacts/employee-tracker/public/images/logo-mark.png"
+    description: "A minimalist modern logo icon combining a clock and a coin, black and vibrant yellow colors, transparent background, flat vector style"
+    aspect_ratio: "1:1"
+
+notes:
+  - Intercepting global fetch to automatically append Authorization: Bearer token from localStorage for all /api requests
+  - Using framer-motion for the required 3-second hold button interaction

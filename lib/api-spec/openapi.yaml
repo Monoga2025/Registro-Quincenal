@@ -1,22 +1,30 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Employee Time Tracker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: employees
+    description: Employee management
+  - name: records
+    description: Time records management
+  - name: reports
+    description: Payroll reports
+  - name: settings
+    description: System settings
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +32,316 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout user
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /employees:
+    get:
+      operationId: listEmployees
+      tags: [employees]
+      summary: List all employees (admin only)
+      responses:
+        "200":
+          description: List of employees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+    post:
+      operationId: createEmployee
+      tags: [employees]
+      summary: Create employee (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeRequest"
+      responses:
+        "201":
+          description: Employee created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+  /employees/{id}:
+    get:
+      operationId: getEmployee
+      tags: [employees]
+      summary: Get employee by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Employee details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+    put:
+      operationId: updateEmployee
+      tags: [employees]
+      summary: Update employee (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmployeeRequest"
+      responses:
+        "200":
+          description: Employee updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+    delete:
+      operationId: deleteEmployee
+      tags: [employees]
+      summary: Delete employee (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Employee deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /records/checkin:
+    post:
+      operationId: checkIn
+      tags: [records]
+      summary: Employee check-in (hold 3 seconds to register)
+      responses:
+        "201":
+          description: Check-in registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimeRecord"
+        "400":
+          description: Already checked in today
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /records/today:
+    get:
+      operationId: getTodayRecords
+      tags: [records]
+      summary: Get current user's today's records
+      responses:
+        "200":
+          description: Today's records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeRecord"
+
+  /records/history:
+    get:
+      operationId: getMyHistory
+      tags: [records]
+      summary: Get current user's record history
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Records history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyRecord"
+
+  /records/employee/{employeeId}:
+    get:
+      operationId: getEmployeeRecords
+      tags: [records]
+      summary: Get records for a specific employee (admin only)
+      parameters:
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Employee records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyRecord"
+
+  /reports/biweekly:
+    get:
+      operationId: getBiweeklyReport
+      tags: [reports]
+      summary: Get biweekly payroll report (admin only)
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            description: "Period in format YYYY-MM (e.g. 2025-03)"
+      responses:
+        "200":
+          description: Biweekly report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BiweeklyReport"
+
+  /reports/my-biweekly:
+    get:
+      operationId: getMyBiweeklyReport
+      tags: [reports]
+      summary: Get current user's biweekly payroll summary
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            description: "Period in format YYYY-MM-P1 or YYYY-MM-P2"
+      responses:
+        "200":
+          description: My biweekly summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeBiweeklySummary"
+
+  /settings/hourly-rate:
+    get:
+      operationId: getHourlyRate
+      tags: [settings]
+      summary: Get current hourly rate
+      responses:
+        "200":
+          description: Current hourly rate setting
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HourlyRateSetting"
+    put:
+      operationId: updateHourlyRate
+      tags: [settings]
+      summary: Update hourly rate (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateHourlyRateRequest"
+      responses:
+        "200":
+          description: Hourly rate updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HourlyRateSetting"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +352,280 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        fullName:
+          type: string
+        role:
+          type: string
+          enum: [admin, employee]
+        position:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - username
+        - fullName
+        - role
+        - createdAt
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        fullName:
+          type: string
+        role:
+          type: string
+          enum: [admin, employee]
+        position:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        totalHoursThisMonth:
+          type: number
+        totalEarningsThisMonth:
+          type: number
+      required:
+        - id
+        - username
+        - fullName
+        - role
+        - createdAt
+
+    CreateEmployeeRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        fullName:
+          type: string
+        position:
+          type: string
+        role:
+          type: string
+          enum: [admin, employee]
+      required:
+        - username
+        - password
+        - fullName
+        - position
+
+    UpdateEmployeeRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+        position:
+          type: string
+        role:
+          type: string
+          enum: [admin, employee]
+        password:
+          type: string
+
+    TimeRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        employeeId:
+          type: integer
+        checkInAt:
+          type: string
+          format: date-time
+        checkOutAt:
+          type: string
+          format: date-time
+          nullable: true
+        date:
+          type: string
+          format: date
+        hoursWorked:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - id
+        - employeeId
+        - checkInAt
+        - date
+
+    DailyRecord:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        dayOfWeek:
+          type: string
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeRecord"
+        totalHours:
+          type: number
+        earnings:
+          type: number
+      required:
+        - date
+        - dayOfWeek
+        - records
+        - totalHours
+        - earnings
+
+    BiweeklyReport:
+      type: object
+      properties:
+        period:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        employees:
+          type: array
+          items:
+            $ref: "#/components/schemas/EmployeeBiweeklySummary"
+        totalPayout:
+          type: number
+        generatedAt:
+          type: string
+          format: date-time
+      required:
+        - period
+        - startDate
+        - endDate
+        - employees
+        - totalPayout
+        - generatedAt
+
+    EmployeeBiweeklySummary:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+        fullName:
+          type: string
+        position:
+          type: string
+        period:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        totalHours:
+          type: number
+        hourlyRate:
+          type: number
+        totalEarnings:
+          type: number
+        dailyBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyRecord"
+      required:
+        - employeeId
+        - fullName
+        - position
+        - period
+        - startDate
+        - endDate
+        - totalHours
+        - hourlyRate
+        - totalEarnings
+        - dailyBreakdown
+
+    HourlyRateSetting:
+      type: object
+      properties:
+        id:
+          type: integer
+        rate:
+          type: number
+        updatedAt:
+          type: string
+          format: date-time
+        updatedBy:
+          type: integer
+          nullable: true
+      required:
+        - id
+        - rate
+        - updatedAt
+
+    UpdateHourlyRateRequest:
+      type: object
+      properties:
+        rate:
+          type: number
+      required:
+        - rate
