@@ -91,6 +91,44 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
 
+### `artifacts/employee-tracker` (`@workspace/employee-tracker`)
+
+React + Vite SPA — employee time tracking frontend. Black/yellow design.
+
+- Routes: `/` (card picker), `/home` (employee dashboard + check-in/out), `/history` (biweekly), `/admin` (admin panel), `/login` (admin login)
+- Auth: employees quick-login by tapping card (no password); admins use username + password
+- Time display: always in minutes (e.g. "1h 30min")
+- `pnpm --filter @workspace/employee-tracker run dev` — dev server
+- `BASE_PATH=/ PORT=3000 pnpm --filter @workspace/employee-tracker run build` — production build to `dist/public/`
+
+## Employees & Credentials
+
+| Username | Password | Role | Name |
+|----------|----------|------|------|
+| admin | admin123 | admin | Administrador |
+| maria | maria123 | employee | María García (Vendedora) |
+| carlos | carlos123 | employee | Carlos Rodríguez (Técnico) |
+| anyelo | anyelo123 | employee | Anyelo |
+| ivan | ivan123 | employee | Ivan |
+
+Password hashing: `SHA256(password + "salt_employee_tracker")` (in `artifacts/api-server/src/routes/auth.ts`)
+
+## EasyPanel Deployment
+
+A `Dockerfile` is included at the root. It builds the entire stack into a single container:
+
+1. Builds the React frontend (`BASE_PATH=/`)
+2. Builds the Express API server (esbuild → `dist/index.cjs`)
+3. Express serves both the API at `/api/` and the static frontend
+
+**Steps to deploy in EasyPanel:**
+1. Push code to a Git repository (GitHub/GitLab)
+2. In EasyPanel → create a new **App** → Source = your repo, Dockerfile path = `Dockerfile`
+3. Create a **PostgreSQL** service in EasyPanel
+4. In your App's environment variables, add `DATABASE_URL` pointing to the PostgreSQL service
+5. Port: `3000`
+6. Run database migrations after first deploy: `pnpm --filter @workspace/db run push`
+
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
