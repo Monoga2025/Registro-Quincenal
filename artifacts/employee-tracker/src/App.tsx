@@ -9,34 +9,37 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { setupFetchInterceptor } from "@/lib/api-setup";
 
 // Pages
+import EmployeePickerPage from "@/pages/auth/employee-picker";
 import LoginPage from "@/pages/auth/login";
 import EmployeeHome from "@/pages/employee/home";
 import EmployeeHistory from "@/pages/employee/history";
 import AdminDashboard from "@/pages/admin/dashboard";
 
-// Initialize the global fetch interceptor immediately
 setupFetchInterceptor();
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ component: Component, allowedRoles }: { component: any, allowedRoles?: string[] }) {
+function ProtectedRoute({ component: Component, allowedRoles }: { component: any; allowedRoles?: string[] }) {
   const { isAuthenticated, isLoading, user } = useAuth();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      setLocation('/login');
+      setLocation('/select');
     }
   }, [isLoading, isAuthenticated, setLocation]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div></div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
   if (!isAuthenticated) return null;
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    // Redirect wrong roles to their respective homes
     setLocation(user.role === 'admin' ? '/admin' : '/');
     return null;
   }
@@ -48,7 +51,6 @@ function Router() {
   const { isAuthenticated, user } = useAuth();
   const [location, setLocation] = useLocation();
 
-  // Root redirect logic based on auth
   useEffect(() => {
     if (location === '/' && isAuthenticated && user?.role === 'admin') {
       setLocation('/admin');
@@ -57,9 +59,13 @@ function Router() {
 
   return (
     <Switch>
+      {/* Public: employee picker (default entry) */}
+      <Route path="/select" component={EmployeePickerPage} />
+
+      {/* Admin password login */}
       <Route path="/login" component={LoginPage} />
-      
-      {/* Employee Routes */}
+
+      {/* Employee routes */}
       <Route path="/">
         {() => <ProtectedRoute component={EmployeeHome} allowedRoles={['employee']} />}
       </Route>
@@ -67,11 +73,11 @@ function Router() {
         {() => <ProtectedRoute component={EmployeeHistory} allowedRoles={['employee']} />}
       </Route>
 
-      {/* Admin Routes */}
+      {/* Admin routes */}
       <Route path="/admin">
         {() => <ProtectedRoute component={AdminDashboard} allowedRoles={['admin']} />}
       </Route>
-      
+
       <Route component={NotFound} />
     </Switch>
   );

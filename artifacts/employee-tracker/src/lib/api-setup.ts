@@ -1,7 +1,3 @@
-/**
- * Intercepts global fetch to automatically inject the Authorization header
- * and handle routing of API requests based on auth state.
- */
 export function setupFetchInterceptor() {
   const originalFetch = window.fetch;
 
@@ -11,25 +7,25 @@ export function setupFetchInterceptor() {
 
     if (url.startsWith('/api')) {
       const token = localStorage.getItem('auth_token');
+      const newConfig: RequestInit = { ...(config || {}) };
+      
       if (token) {
-        const newConfig = config || {};
         newConfig.headers = {
           ...newConfig.headers,
           'Authorization': `Bearer ${token}`
         };
-        
-        const response = await originalFetch(resource, newConfig);
-        
-        // Handle global 401 Unauthorized
-        if (response.status === 401 && !url.includes('/api/auth/login')) {
-          localStorage.removeItem('auth_token');
-          window.dispatchEvent(new Event('auth_unauthorized'));
-        }
-        
-        return response;
       }
+
+      const response = await originalFetch(resource, newConfig);
+
+      if (response.status === 401 && !url.includes('/api/auth/login') && !url.includes('/api/auth/quick-login') && !url.includes('/api/auth/employees-public')) {
+        localStorage.removeItem('auth_token');
+        window.dispatchEvent(new Event('auth_unauthorized'));
+      }
+
+      return response;
     }
-    
+
     return originalFetch(...args);
   };
 }

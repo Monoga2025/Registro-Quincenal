@@ -1,12 +1,10 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, ne } from "drizzle-orm";
 import crypto from "crypto";
 
 const router: IRouter = Router();
 
-// Simple in-memory session store (token -> userId)
-// In production, use Redis or DB-backed sessions
 const sessions = new Map<string, number>();
 
 export function getSessionUserId(token: string): number | undefined {
@@ -20,6 +18,53 @@ function hashPassword(password: string): string {
 function generateToken(): string {
   return crypto.randomBytes(32).toString("hex");
 }
+
+// Public: list employees for picker (no auth required)
+router.get("/employees-public", async (_req: Request, res: Response) => {
+  const employees = await db
+    .select({
+      id: usersTable.id,
+      fullName: usersTable.fullName,
+      position: usersTable.position,
+      role: usersTable.role,
+    })
+    .from(usersTable)
+    .where(ne(usersTable.role, "admin"));
+
+  return res.json(employees);
+});
+
+// Quick login for employees (no password)
+router.post("/quick-login", async (req: Request, res: Response) => {
+  const { employeeId } = req.body;
+
+  if (!employeeId) {
+    return res.status(400).json({ error: "bad_request", message: "employeeId required" });
+  }
+
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, Number(employeeId)));
+
+  if (!user) {
+    return res.status(404).json({ error: "not_found", message: "Employee not found" });
+  }
+
+  if (user.role === "admin") {
+    return res.status(403).json({ error: "forbidden", message: "Admins must use password login" });
+  }
+
+  const token = generateToken();
+  sessions.set(token, user.id);
+
+  const { password: _pwd, ...userWithoutPassword } = user;
+
+  return res.json({
+    user: {
+      ...userWithoutPassword,
+      createdAt: user.createdAt.toISOString(),
+    },
+    token,
+  });
+});
 
 router.post("/login", async (req: Request, res: Response) => {
   const { username, password } = req.body;

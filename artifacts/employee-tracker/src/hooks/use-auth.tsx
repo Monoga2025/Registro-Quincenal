@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null | undefined;
   isLoading: boolean;
   login: (data: LoginRequest) => Promise<void>;
+  quickLogin: (employeeId: number) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -31,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleUnauthorized = () => {
       setToken(null);
-      setLocation('/login');
+      setLocation('/select');
     };
     window.addEventListener('auth_unauthorized', handleUnauthorized);
     return () => window.removeEventListener('auth_unauthorized', handleUnauthorized);
@@ -50,12 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('auth_token', res.token);
       setToken(res.token);
       await refetch();
-      
+
       toast({
-        title: "¡Bienvenido!",
-        description: `Hola ${res.user.fullName}`,
+        title: `¡Bienvenido, ${res.user.fullName}!`,
+        description: "Sesión iniciada correctamente",
       });
-      
+
       if (res.user.role === 'admin') {
         setLocation('/admin');
       } else {
@@ -71,6 +72,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const handleQuickLogin = async (employeeId: number) => {
+    const response = await fetch('/api/auth/quick-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employeeId }),
+    });
+
+    if (!response.ok) {
+      throw new Error('No se pudo iniciar sesión');
+    }
+
+    const res = await response.json();
+    localStorage.setItem('auth_token', res.token);
+    setToken(res.token);
+    await refetch();
+
+    toast({
+      title: `¡Hola, ${res.user.fullName}!`,
+      description: "Bienvenido",
+    });
+
+    setLocation('/');
+  };
+
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync();
@@ -79,20 +104,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       localStorage.removeItem('auth_token');
       setToken(null);
-      setLocation('/login');
+      setLocation('/select');
     }
   };
 
   const isLoading = isUserLoading && !!token;
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        isLoading, 
-        login: handleLogin, 
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        login: handleLogin,
+        quickLogin: handleQuickLogin,
         logout: handleLogout,
-        isAuthenticated: !!user 
+        isAuthenticated: !!user
       }}
     >
       {children}
